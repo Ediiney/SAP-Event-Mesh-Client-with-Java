@@ -1,0 +1,147 @@
+= Messaging Client Java - Samples for SAP Event Mesh
+
+image:https://api.reuse.software/info/github.com/SAP-samples/event-mesh-client-java-samples["REUSE status", link="https://api.reuse.software/info/github.com/SAP-samples/event-mesh-client-java-samples"]
+
+== Note
+The SAP Cloud Platform Enterprise Messaging service has been renamed to SAP Event Mesh - find more information in this link:https://blogs.sap.com/2021/02/22/please-welcome-sap-event-mesh-new-name-for-sap-cloud-platform-enterprise-messaging/[blog article].
+
+== Description
+SAP Event Mesh provides a cloud-based messaging framework for the development of decoupled and resilient services and integration flows (using SAP Cloud Integration) to support asynchronous communication principles.
+Direct integration with SAP S/4HANA Business Event Handling allows efficient development of innovative and scaling extensions.
+
+This sample demonstrates Event Mesh with Java, using combinations of vanilla Java, Spring, and JMS. Details on each sample application and the covered scenario are described in the table _List of sample projects_ below.
+
+For more details of **SAP Event Mesh** take a look at the link:https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/df532e8735eb4322b00bfc7e42f84e8d.html[SAP Event Mesh on SAP Help portal].
+
+
+== Requirements
+Below requirements are necessary for each of the samples.
+Further necessary configuration and settings are dependent on the specific sample and are documented within each sample project.
+
+  * Installed _Java 8_ -> link:https://java.com/de/download/[Java download]
+  * Installed _Git_ -> link:https://git-scm.com/downloads[Git download]
+  * Installed _Maven 3.x_ -> link:https://maven.apache.org/download.cgi[Maven download]
+  * A _SAP BTP_ Account with `Event Mesh Service` is required. +
+    For more detailed information and help on how to start with _SAP Event Mesh_ please check the link:https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/df532e8735eb4322b00bfc7e42f84e8d.html[SAP help page].
+    ** Optional: Installed _CloudFoundry CLI_ -> link:https://docs.cloudfoundry.org/cf-cli/install-go-cli.html[Installing the cf CLI] 
+    *** This must be also fully configured with the corresponding Cloud Foundry landscape to be able to do a `cf push`
+    ** Created Event Mesh Service Instance 
+    *** e.g. via cli: `cf cs enterprise-messaging default emjapi-samples-sapbtp -c` link:./emjapi-samples-jms-p2p/config/[`<contents of default descriptor>`]
+    *** The Service Descriptors can be found link:https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/d0483a9e38434f23a4579d6fcc72654b.html[here]
+    *** Remember to adjust the manifest file of the application
+    *** Include the ability to create required queues (e.g. `NameOfQueue`) and queue subscriptions (e.g. `NameOfTopic`) via e.g. 
+    link:https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/57af1bd4e8f54b0a9b36414a5ec6b800.html?q=messaging%20management[MM API],
+    link:https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/57af1bd4e8f54b0a9b36414a5ec6b800.html[UI]
+
+=== Recommended
+
+  * Installed IDE of choice (e.g. link:https://code.visualstudio.com/[Visual Studio] with installed link:https://marketplace.visualstudio.com/items?itemName=redhat.java[Java language support] plugin)
+
+=== List of sample projects
+
+[cols=3*,options=header]
+|===
+|Application
+|Scenario
+|Scenario Description
+
+|link:./emjapi-samples-jms-p2p[`emjapi-samples-jms-p2p`]
+|Application for Event Mesh based on Spring Web running on SAP Business Technology Platform (@ CloudFoundry (with Event Mesh Service)).
+|This sample demonstrates how messages can be send and received from a SAP BTP deployed application. Therefore the messaging sample provides a _Spring Boot_ based application which provides REST endpoints for _send_ and _receive_ messages via a queue (or queues) of choice. The REST endpoints are provided via the `MessagingServiceRestController`.
+
+|link:./emjapi-samples-jms-pubsub[`emjapi-samples-jms-pubsub`]
+|Application for Event Mesh based on Spring Web running on SAP Business Technology Platform (@ CloudFoundry (with Event Mesh Service)).
+|This sample demonstrates how messages can be send and received from a topic from a SAP BTP deployed application. Therefore the messaging sample provides a _Spring Boot_ based application which provides REST endpoints for _send_ and _receive_ messages via a topic of choice. It also offers a REST endpoint to receive a message from a queue. The REST endpoints are provided via the `MessagingServiceRestController`.
+
+|===
+
+== Download and Installation
+To download and install the samples just clone this repository via `git clone`
+
+For details on how to configure and run the samples please take a look into the README in the corresponding samples directory.
+
+== Usage of the client
+
+This section describes the usage of the client without any sample application. It is described which dependencies are needed and how a `MessagingServiceJmsConnectionFactory` is received in a short way.
+
+=== Dependencies
+
+Three different dependencies are needed:
+
+. the emjapi spring service connector which provides the `MessagingService`
+. the emjapi core which creates the connection factory
+. the emjapi JMS extension which provides the `MessagingServiceJmsConnectionFactory`
+
+```xml
+<dependency>
+	<groupId>com.sap.cloud.servicesdk.xbem</groupId>
+	<artifactId>emjapi-connector-sap-cp</artifactId>
+	<version>${version.xbem.client}</version>
+</dependency>
+
+<dependency>
+	<groupId>com.sap.cloud.servicesdk.xbem</groupId>
+	<artifactId>emjapi-core</artifactId>
+	<version>${version.xbem.client}</version>
+</dependency>
+
+<dependency>
+	<groupId>com.sap.cloud.servicesdk.xbem</groupId>
+	<artifactId>emjapi-extension-sap-cp-jms</artifactId>
+	<version>${version.xbem.client}</version>
+</dependency>
+```
+
+=== Code snippets
+
+Get the `MessagingService` via the spring `Cloud` object
+
+```java
+ServiceConnectorConfig config = null; // currently there are no configurations for the MessagingServiceFactory supported
+Cloud cloud = new CloudFactory().getCloud();
+// get a messaging service factory via the service connector
+MessagingService messagingService = cloud.getSingletonServiceConnector(MessagingService.class, config);
+```
+
+Create a the `MessagingServiceFactory` object with the help of the `MessagingServiceFactoryCreator` and get a `MessagingServiceJmsConnectionFactory`. 
+The Connection Factory can be configured with the `MessagingServiceJmsSettings`. In case the reconnection feature is not needed and an individual 
+connection mechanism (e.G. through a connection cache) is used the settings can be skipped. The connection factory can be built with 
+`messagingServiceFactory.createConnectionFactory(MessagingServiceJmsConnectionFactory.class,settings)`.
+
+```java
+MessagingServiceJmsSettings settings = new MessagingServiceJmsSettings(); // settings are preset with default values (see JavaDoc)
+settings.setMaxReconnectAttempts(5); // use -1 for unlimited attempts
+settings.setInitialReconnectDelay(3000);
+settings.setReconnectDelay(3000);
+MessagingServiceFactory messagingServiceFactory = MessagingServiceFactoryCreator.createFactory(messagingService);
+MessagingServiceJmsConnectionFactory connectionFactory = messagingServiceFactory.createConnectionFactory(MessagingServiceJmsConnectionFactory.class, settings)
+```
+
+Further the `MessagingServiceJmsConnectionFactory` is used to create a connection and a session.
+
+```java
+Connection connection = connectionFactory.createConnection();
+Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE));
+```
+
+== Messaging Management API
+The messaging management api (MM API) provides functionality for creating, deleting and updating queues and queue subscriptions.
+Further more it provides APIs to get information on queues and queue subscriptions.
+The MM API documentation can be found link:https://help.sap.com/doc/75c9efd00fc14183abc4c613490c53f4/Cloud/en-US/rest-management-messaging.html[here]. 
+The MM APIs have to be enabled in the service descriptor. A description for enabling the MM API can be found link:https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/d0483a9e38434f23a4579d6fcc72654b.html[here].
+
+== Creation of queues with the UI
+Queues can be created through the SAP Business Technology Platform Cockpit UI.
+More information regarding the creation of queues through the UI can be found link:https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/57af1bd4e8f54b0a9b36414a5ec6b800.html[here]
+
+== Service Descriptor
+Examples for the different service descriptors can be found link:https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/d0483a9e38434f23a4579d6fcc72654b.html[here] on the help site
+and in the config folder of this project.
+
+== Contributing
+This project is _'as-is'_ with no support, no changes being made. +
+You are welcome to make changes to improve it but we are not available for questions or support of any kind.
+
+== Licensing
+Copyright (c) 2024 SAP SE or an SAP affiliate company. All rights reserved. +
+This project is licensed under the Apache Software License, version 2.0 except as noted otherwise in the link:./LICENSES/Apache-2.0.txt[LICENSE file].
